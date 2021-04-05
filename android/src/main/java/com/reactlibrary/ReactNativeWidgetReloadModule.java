@@ -2,10 +2,15 @@
 
 package com.reactlibrary;
 
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
+import android.appwidget.AppWidgetManager;
+import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
-import com.facebook.react.bridge.Callback;
 
 public class ReactNativeWidgetReloadModule extends ReactContextBaseJavaModule {
 
@@ -13,17 +18,11 @@ public class ReactNativeWidgetReloadModule extends ReactContextBaseJavaModule {
     private Class widgetClass;
     private String idsField;
 
-    public ReactNativeWidgetReloadModule(ReactApplicationContext reactContext, Class widgetClass, String idsField) {
+    final private String _moduleName = "RNWidgetManager";
+
+    public ReactNativeWidgetReloadModule(ReactApplicationContext reactContext) {
         super(reactContext);
         this.reactContext = reactContext;
-
-        this.widgetClass = widgetClass;
-
-        if (idsField == null) {
-            this.idsField = AppWidgetManager.EXTRA_APPWIDGET_IDS;
-        } else {
-            this.idsField = idsField;
-        }
     }
 
     @Override
@@ -32,26 +31,29 @@ public class ReactNativeWidgetReloadModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
+    public void androidConfigure(String className, String idsExtra, final Promise promise) {
+        Log.d(_moduleName, "androidConfigure" + className + " ids: " + idsExtra);
+
+        try {
+            this.widgetClass = Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        idsField = idsExtra;
+
+        promise.resolve(true);
+    }
+
+    @ReactMethod
     public void reloadAllWidgets(final Promise promise) {
         Log.d(_moduleName, "Reload widgets");
 
-        final int [] ids = _getIds();
-
-        _sendUpdateIntent(ids);
-        promise.resolve(_convertIds(ids));
+        sendUpdateIntent(getWidgetIds());
+        promise.resolve(true);
     }
 
-    private void _sendUpdateIntent(int[] ids) {
-        Log.d(_moduleName, "Sending reload intent");
-        Context context = reactContext.getApplicationContext();
-
-        Intent intent = new Intent();
-        intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
-        intent.putExtra(this.idsField, ids);
-        context.sendBroadcast(intent);
-    }
-
-    private int[] _getIds() {
+    private int[] getWidgetIds() {
         Context context = reactContext.getApplicationContext();
 
         AppWidgetManager man = AppWidgetManager.getInstance(context);
@@ -59,12 +61,13 @@ public class ReactNativeWidgetReloadModule extends ReactContextBaseJavaModule {
                 new ComponentName(context, this.widgetClass));
     }
 
-    private WritableArray _convertIds(int[] ids) {
-        WritableArray resultArray = new WritableNativeArray();
-        for (int i = 0; i < ids.length; i++) {
-            resultArray.pushInt(ids[i]);
-        }
+    private void sendUpdateIntent(int[] ids) {
+        Log.d(_moduleName, "Sending reload intent");
+        Context context = reactContext.getApplicationContext();
 
-        return resultArray;
+        Intent intent = new Intent();
+        intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
+        intent.putExtra(this.idsField, ids);
+        context.sendBroadcast(intent);
     }
 }

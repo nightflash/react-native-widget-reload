@@ -12,17 +12,9 @@ import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.uimanager.ViewManager;
 
 public class ReactNativeWidgetReloadPackage implements ReactPackage {
-    private Class widgetClass;
-    private String idsField;
-
-    public ReactNativeWidgetReloadPackage(Class widgetClass, String idsField) {
-        this.widgetClass = widgetClass;
-        this.idsField = idsField;
-    }
-
     @Override
     public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
-        return Arrays.<NativeModule>asList(new ReactNativeWidgetReloadModule(reactContext, this.widgetClass, this.idsField));
+        return Arrays.<NativeModule>asList(new ReactNativeWidgetReloadModule(reactContext));
     }
 
     @Override
